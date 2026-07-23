@@ -204,6 +204,9 @@
   .chart-wrap { position: relative; }
   canvas { display: block; width: 100%; height: 460px; }
   .canvas-2d { height: 520px; }
+  .canvas-3d { height: 560px; cursor: grab; touch-action: none; }
+  .canvas-3d.dragging { cursor: grabbing; }
+  .hint { font-size: 12px; color: var(--text-muted); margin-left: auto; }
 
   .tooltip {
     position: absolute;
@@ -242,6 +245,7 @@
   <div class="tabs" role="tablist">
     <button class="tab" id="tab1d" role="tab" aria-selected="true" aria-controls="sec1d">1-D walk</button>
     <button class="tab" id="tab2d" role="tab" aria-selected="false" aria-controls="sec2d">2-D walk</button>
+    <button class="tab" id="tab3d" role="tab" aria-selected="false" aria-controls="sec3d">3-D walk</button>
   </div>
 
   <!-- ================= 1-D section ================= -->
@@ -292,7 +296,7 @@
         <span class="step-label" id="d1-stepLabel"></span>
       </div>
       <div class="legend">
-        <span class="key"><span class="swatch" style="border-color: var(--series-walk)"></span>Individual walks</span>
+        <span class="key"><span class="swatch" style="border-image: linear-gradient(90deg, hsl(0,70%,50%), hsl(137,70%,45%), hsl(275,70%,55%)) 1"></span>Individual walks (one color each)</span>
         <span class="key"><span class="swatch" style="border-color: var(--series-mean)"></span>Ensemble mean</span>
       </div>
       <div class="chart-wrap">
@@ -367,7 +371,7 @@
         <span class="step-label" id="d2-stepLabel"></span>
       </div>
       <div class="legend">
-        <span class="key"><span class="swatch" style="border-color: var(--series-walk)"></span>Individual walks</span>
+        <span class="key"><span class="swatch" style="border-image: linear-gradient(90deg, hsl(0,70%,50%), hsl(137,70%,45%), hsl(275,70%,55%)) 1"></span>Individual walks (one color each)</span>
         <span class="key"><span class="swatch" style="border-color: var(--series-mean)"></span>Mean position trail</span>
       </div>
       <div class="chart-wrap">
@@ -379,6 +383,89 @@
         <div class="table-scroll">
           <table id="d2-dataTable">
             <thead><tr><th>Step</th><th>Mean x</th><th>Mean y</th><th>Mean dist</th><th>Max dist</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= 3-D section ================= -->
+  <section id="sec3d" role="tabpanel" aria-labelledby="tab3d" hidden>
+    <div class="controls">
+      <div class="control">
+        <label for="d3-pUp">P(up) %</label>
+        <input type="number" id="d3-pUp" min="0" max="100" step="0.1" value="16.6">
+      </div>
+      <div class="control">
+        <label for="d3-pDown">P(down) %</label>
+        <input type="number" id="d3-pDown" min="0" max="100" step="0.1" value="16.6">
+      </div>
+      <div class="control">
+        <label for="d3-pLeft">P(left) %</label>
+        <input type="number" id="d3-pLeft" min="0" max="100" step="0.1" value="16.6">
+      </div>
+      <div class="control">
+        <label for="d3-pRight">P(right) %</label>
+        <input type="number" id="d3-pRight" min="0" max="100" step="0.1" value="16.6">
+      </div>
+      <div class="control">
+        <label for="d3-pFwd">P(fwd) %</label>
+        <input type="number" id="d3-pFwd" min="0" max="100" step="0.1" value="16.6">
+      </div>
+      <div class="control">
+        <label for="d3-pBack">P(back) %</label>
+        <input type="number" id="d3-pBack" min="0" max="100" step="0.1" value="16.6">
+      </div>
+      <div class="control">
+        <label>P(stay) %</label>
+        <div class="derived" id="d3-pStay">0.4</div>
+      </div>
+      <div class="control">
+        <label for="d3-nSteps">Steps</label>
+        <input type="number" id="d3-nSteps" min="1" max="20000" step="1" value="500">
+      </div>
+      <div class="control">
+        <label for="d3-nSims">Simulations</label>
+        <input type="number" id="d3-nSims" min="1" max="5000" step="1" value="30">
+      </div>
+      <button class="rerun" id="d3-rerun">Re-run</button>
+    </div>
+    <p class="error-msg" id="d3-errMsg"></p>
+
+    <div class="tiles">
+      <div class="tile"><div class="label">Mean final distance</div><div class="value" id="d3-statMean">–</div></div>
+      <div class="tile"><div class="label">RMS final distance</div><div class="value" id="d3-statRms">–</div></div>
+      <div class="tile"><div class="label">RMS distance (theory)</div><div class="value" id="d3-statTheory">–</div></div>
+      <div class="tile"><div class="label">Farthest from origin</div><div class="value" id="d3-statMax">–</div></div>
+    </div>
+
+    <div class="card">
+      <div class="playback">
+        <button class="pb-btn pb-play" id="d3-playBtn">▶ Play</button>
+        <button class="pb-btn" id="d3-stepBtn" title="Advance one step">+1 step</button>
+        <button class="pb-btn" id="d3-resetBtn" title="Back to step 0">⟲ Reset</button>
+        <span class="speed">
+          <label for="d3-speedCtl">Speed</label>
+          <input type="range" id="d3-speedCtl" min="0" max="100" step="1" value="50">
+          <span class="speed-label" id="d3-speedLabel"></span>
+        </span>
+        <input type="range" class="scrub" id="d3-scrub" min="0" max="500" step="1" value="0" aria-label="Current step">
+        <span class="step-label" id="d3-stepLabel"></span>
+      </div>
+      <div class="legend">
+        <span class="key"><span class="swatch" style="border-image: linear-gradient(90deg, hsl(0,70%,50%), hsl(137,70%,45%), hsl(275,70%,55%)) 1"></span>Individual walks (one color each)</span>
+        <span class="key"><span class="swatch" style="border-color: var(--series-mean)"></span>Mean position trail</span>
+        <span class="hint">Drag to rotate · scroll to zoom</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="d3-chart" class="canvas-3d"></canvas>
+      </div>
+      <details class="table-view">
+        <summary>Table view (per-step ensemble statistics)</summary>
+        <div class="table-scroll">
+          <table id="d3-dataTable">
+            <thead><tr><th>Step</th><th>Mean x</th><th>Mean y</th><th>Mean z</th><th>Mean dist</th><th>Max dist</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -401,6 +488,14 @@
 
   function fmt(v, digits = 2) {
     return Number(v).toLocaleString(undefined, { maximumFractionDigits: digits });
+  }
+
+  // per-walk color: golden-angle hue spacing so consecutive walks differ strongly;
+  // lightness tuned per mode so every hue stays visible on the surface
+  function walkColor(s) {
+    const dark = cssVar("--text-primary").toLowerCase() === "#ffffff";
+    const hue = (s * 137.508) % 360;
+    return `hsl(${hue.toFixed(1)}, 70%, ${dark ? 62 : 42}%)`;
   }
 
   function niceTicks(lo, hi, target) {
@@ -486,7 +581,7 @@
       reset(steps) {  // called after a fresh simulation
         pb.playing = false;
         scrubEl.max = String(steps);
-        pb.step = steps;   // show the full result; press Play to replay
+        pb.step = 0;   // start at the origin; press Play (or scrub) to reveal the walk
         pb.updateUI();
       },
 
@@ -595,7 +690,17 @@
         min[i] = lo;
         max[i] = hi;
       }
-      return { mean, std, min, max };
+      // running bounds so the axes can grow with the playback position
+      const cumMin = new Int32Array(steps + 1);
+      const cumMax = new Int32Array(steps + 1);
+      let rLo = 0, rHi = 0;
+      for (let i = 0; i <= steps; i++) {
+        if (min[i] < rLo) rLo = min[i];
+        if (max[i] > rHi) rHi = max[i];
+        cumMin[i] = rLo;
+        cumMax[i] = rHi;
+      }
+      return { mean, std, min, max, cumMin, cumMax };
     }
 
     let scale = null;
@@ -615,18 +720,18 @@
       ctx.fillRect(0, 0, W, H);
 
       const { steps } = params;
-      let yLo = 0, yHi = 0;
-      for (let i = 0; i <= steps; i++) {
-        if (stats.min[i] < yLo) yLo = stats.min[i];
-        if (stats.max[i] > yHi) yHi = stats.max[i];
-      }
-      if (yLo === yHi) { yLo -= 1; yHi += 1; }
+      // axes track the playback position: x spans the steps taken so far,
+      // y spans the range the walks have actually covered so far
+      const upTo = pb.step;
+      const xMax = Math.max(10, upTo);
+      let yLo = Math.min(-2, stats.cumMin[upTo]);
+      let yHi = Math.max(2, stats.cumMax[upTo]);
       const yPadding = (yHi - yLo) * 0.06;
       yLo -= yPadding; yHi += yPadding;
 
       const plotW = W - PAD.left - PAD.right;
       const plotH = H - PAD.top - PAD.bottom;
-      const xOf = i => PAD.left + (i / steps) * plotW;
+      const xOf = i => PAD.left + (i / xMax) * plotW;
       const yOf = v => PAD.top + (1 - (v - yLo) / (yHi - yLo)) * plotH;
 
       // gridlines + y ticks
@@ -648,8 +753,8 @@
       // x ticks
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      for (const t of niceTicks(0, steps, 8)) {
-        if (t < 0 || t > steps) continue;
+      for (const t of niceTicks(0, xMax, 8)) {
+        if (t < 0 || t > xMax) continue;
         ctx.fillText(t.toLocaleString(), xOf(t), H - PAD.bottom + 8);
       }
 
@@ -672,16 +777,15 @@
       }
 
       // individual walks — one hue, alpha scaled to count, drawn up to the playback position
-      const upTo = pb.step;
       const drawn = Math.min(walks.length, MAX_DRAWN_WALKS);
       const alpha = Math.min(0.55, Math.max(0.04, 1.6 / Math.sqrt(drawn)));
-      const stride = Math.max(1, Math.floor(steps / plotW));
-      ctx.strokeStyle = cssVar("--series-walk");
+      const stride = Math.max(1, Math.floor(xMax / plotW));
       ctx.globalAlpha = alpha;
       ctx.lineWidth = 1;
       ctx.lineJoin = "round";
       for (let s = 0; s < drawn; s++) {
         const w = walks[s];
+        ctx.strokeStyle = walkColor(s);
         ctx.beginPath();
         ctx.moveTo(xOf(0), yOf(w[0]));
         for (let i = stride; i <= upTo; i += stride) ctx.lineTo(xOf(i), yOf(w[i]));
@@ -692,9 +796,9 @@
 
       // walker head dots mid-playback (skipped when the swarm is too dense to read)
       if (upTo < steps && drawn <= 60) {
-        ctx.fillStyle = cssVar("--series-walk");
         ctx.globalAlpha = Math.min(1, alpha * 3);
         for (let s = 0; s < drawn; s++) {
+          ctx.fillStyle = walkColor(s);
           ctx.beginPath();
           ctx.arc(xOf(upTo), yOf(walks[s][upTo]), 2.5, 0, Math.PI * 2);
           ctx.fill();
@@ -733,17 +837,16 @@
         ctx.stroke();
       }
 
-      scale = { xOf, yOf, plotW };
+      scale = { xOf, yOf, plotW, xMax };
     }
 
     function onPointerMove(e) {
       if (!stats || !scale) return;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      const { steps } = params;
       const frac = (x - PAD.left) / scale.plotW;
       if (frac < -0.02 || frac > 1.02) { hideTooltip(); return; }
-      const i = Math.max(0, Math.min(pb.step, Math.round(frac * steps)));
+      const i = Math.max(0, Math.min(pb.step, Math.round(frac * scale.xMax)));
       hoverStep = i;
 
       tooltip.replaceChildren();
@@ -873,6 +976,12 @@
       const meanDist = new Float64Array(steps + 1);
       const rmsDist = new Float64Array(steps + 1);
       const maxDist = new Float64Array(steps + 1);
+      // running x/y bounds so the axes can grow with the playback position
+      const cumXLo = new Int32Array(steps + 1);
+      const cumXHi = new Int32Array(steps + 1);
+      const cumYLo = new Int32Array(steps + 1);
+      const cumYHi = new Int32Array(steps + 1);
+      let rxLo = 0, rxHi = 0, ryLo = 0, ryHi = 0;
       for (let i = 0; i <= steps; i++) {
         let sx = 0, sy = 0, sd = 0, sd2 = 0, hi = 0;
         for (let s = 0; s < n; s++) {
@@ -881,14 +990,20 @@
           const d = Math.sqrt(d2);
           sx += x; sy += y; sd += d; sd2 += d2;
           if (d > hi) hi = d;
+          if (x < rxLo) rxLo = x;
+          if (x > rxHi) rxHi = x;
+          if (y < ryLo) ryLo = y;
+          if (y > ryHi) ryHi = y;
         }
         meanX[i] = sx / n;
         meanY[i] = sy / n;
         meanDist[i] = sd / n;
         rmsDist[i] = Math.sqrt(sd2 / n);
         maxDist[i] = hi;
+        cumXLo[i] = rxLo; cumXHi[i] = rxHi;
+        cumYLo[i] = ryLo; cumYHi[i] = ryHi;
       }
-      return { meanX, meanY, meanDist, rmsDist, maxDist };
+      return { meanX, meanY, meanDist, rmsDist, maxDist, cumXLo, cumXHi, cumYLo, cumYHi };
     }
 
     let scale = null;
@@ -909,18 +1024,11 @@
 
       const { steps } = params;
 
-      // bounds over all drawn walks; equal units on both axes so the plane isn't distorted
+      // bounds grow with the playback position; equal units on both axes so the plane isn't distorted
       const drawn = Math.min(walks.length, MAX_DRAWN_WALKS);
-      let xLo = 0, xHi = 0, yLo = 0, yHi = 0;
-      for (let s = 0; s < drawn; s++) {
-        const { xs, ys } = walks[s];
-        for (let i = 0; i <= steps; i++) {
-          if (xs[i] < xLo) xLo = xs[i];
-          if (xs[i] > xHi) xHi = xs[i];
-          if (ys[i] < yLo) yLo = ys[i];
-          if (ys[i] > yHi) yHi = ys[i];
-        }
-      }
+      const upTo = pb.step;
+      let xLo = stats.cumXLo[upTo], xHi = stats.cumXHi[upTo];
+      let yLo = stats.cumYLo[upTo], yHi = stats.cumYHi[upTo];
       xLo -= 2; xHi += 2; yLo -= 2; yHi += 2;
 
       const plotW = W - PAD.left - PAD.right;
@@ -983,15 +1091,14 @@
       }
 
       // individual walks up to the playback position
-      const upTo = pb.step;
       const alpha = Math.min(0.55, Math.max(0.05, 1.6 / Math.sqrt(drawn)));
       const stride = Math.max(1, Math.floor(steps / 4000)); // cap path points per walk
-      ctx.strokeStyle = cssVar("--series-walk");
       ctx.globalAlpha = alpha;
       ctx.lineWidth = 1;
       ctx.lineJoin = "round";
       for (let s = 0; s < drawn; s++) {
         const { xs, ys } = walks[s];
+        ctx.strokeStyle = walkColor(s);
         ctx.beginPath();
         ctx.moveTo(xOf(xs[0]), yOf(ys[0]));
         for (let i = stride; i <= upTo; i += stride) ctx.lineTo(xOf(xs[i]), yOf(ys[i]));
@@ -1001,9 +1108,9 @@
       ctx.globalAlpha = 1;
 
       // walker head dots — always shown in 2-D so current positions are readable
-      ctx.fillStyle = cssVar("--series-walk");
       ctx.globalAlpha = Math.min(1, alpha * 4);
       for (let s = 0; s < drawn; s++) {
+        ctx.fillStyle = walkColor(s);
         ctx.beginPath();
         ctx.arc(xOf(walks[s].xs[upTo]), yOf(walks[s].ys[upTo]), 2.5, 0, Math.PI * 2);
         ctx.fill();
@@ -1162,10 +1269,329 @@
     return { run, render, hasRun: () => !!stats };
   })();
 
+  /* ================= 3-D walk ================= */
+
+  const threeD = (() => {
+    const canvas = $("d3-chart");
+    const ctx = canvas.getContext("2d");
+    const wrap = canvas.parentElement;
+    const MAX_DRAWN_WALKS = 150;
+
+    let walks = [], stats = null, params = null;
+
+    // camera: orbit angles + zoom, driven by drag / scroll
+    const cam = { yaw: Math.PI / 5, pitch: Math.PI / 8, zoom: 1 };
+
+    const pb = makePlayback({
+      prefix: "d3",
+      getSteps: () => (params ? params.steps : 0),
+      onStepChange: () => render(),
+    });
+
+    function simulate(p, steps, sims) {
+      const { pUp, pDown, pLeft, pRight, pFwd, pBack } = p;
+      const c1 = pUp, c2 = c1 + pDown, c3 = c2 + pLeft,
+            c4 = c3 + pRight, c5 = c4 + pFwd, c6 = c5 + pBack;
+      const out = new Array(sims);
+      for (let s = 0; s < sims; s++) {
+        const xs = new Int32Array(steps + 1);
+        const ys = new Int32Array(steps + 1);
+        const zs = new Int32Array(steps + 1);
+        let x = 0, y = 0, z = 0;
+        for (let i = 1; i <= steps; i++) {
+          const r = Math.random();
+          if (r < c1) y++;
+          else if (r < c2) y--;
+          else if (r < c3) x--;
+          else if (r < c4) x++;
+          else if (r < c5) z++;
+          else if (r < c6) z--;
+          xs[i] = x; ys[i] = y; zs[i] = z;
+        }
+        out[s] = { xs, ys, zs };
+      }
+      return out;
+    }
+
+    function computeStats(walks, steps) {
+      const n = walks.length;
+      const meanX = new Float64Array(steps + 1);
+      const meanY = new Float64Array(steps + 1);
+      const meanZ = new Float64Array(steps + 1);
+      const meanDist = new Float64Array(steps + 1);
+      const rmsDist = new Float64Array(steps + 1);
+      const maxDist = new Float64Array(steps + 1);
+      // running spatial extent so the view can grow with the playback position
+      const cumExt = new Float64Array(steps + 1);
+      let rExt = 0;
+      for (let i = 0; i <= steps; i++) {
+        let sx = 0, sy = 0, sz = 0, sd = 0, sd2 = 0, hi = 0;
+        for (let s = 0; s < n; s++) {
+          const x = walks[s].xs[i], y = walks[s].ys[i], z = walks[s].zs[i];
+          const d2 = x * x + y * y + z * z;
+          const d = Math.sqrt(d2);
+          sx += x; sy += y; sz += z; sd += d; sd2 += d2;
+          if (d > hi) hi = d;
+          const ext = Math.max(Math.abs(x), Math.abs(y), Math.abs(z));
+          if (ext > rExt) rExt = ext;
+        }
+        meanX[i] = sx / n;
+        meanY[i] = sy / n;
+        meanZ[i] = sz / n;
+        meanDist[i] = sd / n;
+        rmsDist[i] = Math.sqrt(sd2 / n);
+        maxDist[i] = hi;
+        cumExt[i] = rExt;
+      }
+      return { meanX, meanY, meanZ, meanDist, rmsDist, maxDist, cumExt };
+    }
+
+    function render() {
+      if (!stats) return;
+      const dpr = window.devicePixelRatio || 1;
+      const W = wrap.clientWidth;
+      if (!W) return; // hidden tab
+      const H = 560;
+      canvas.width = W * dpr;
+      canvas.height = H * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      const surface = cssVar("--surface-1");
+      ctx.fillStyle = surface;
+      ctx.fillRect(0, 0, W, H);
+
+      const upTo = pb.step;
+      const cx = W / 2, cy = H / 2;
+
+      // view extent grows with the walk footprint (min 4 so the start isn't degenerate)
+      const ext = Math.max(4, stats.cumExt[upTo] * 1.15);
+      const baseScale = (Math.min(W, H) / 2 - 40) / ext;
+      const scale = baseScale * cam.zoom;
+
+      // rotation: yaw about the vertical, then pitch; screen y is walk-y (up)
+      const cyaw = Math.cos(cam.yaw), syaw = Math.sin(cam.yaw);
+      const cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+      const persp = ext * 4; // perspective distance in walk units
+      function project(x, y, z) {
+        const rx = x * cyaw + z * syaw;
+        const rz = -x * syaw + z * cyaw;
+        const ry = y * cp - rz * sp;
+        const rz2 = y * sp + rz * cp;
+        const f = persp / (persp + rz2);
+        return [cx + rx * scale * f, cy - ry * scale * f, rz2];
+      }
+
+      // axis lines through the origin, with labels at the positive ends
+      const axisLen = ext;
+      const axes = [
+        { to: [axisLen, 0, 0], label: "+x" },
+        { to: [0, axisLen, 0], label: "+y" },
+        { to: [0, 0, axisLen], label: "+z" },
+      ];
+      ctx.lineWidth = 1;
+      ctx.font = "11px system-ui, -apple-system, 'Segoe UI', sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      for (const a of axes) {
+        const [x1, y1] = project(-a.to[0], -a.to[1], -a.to[2]);
+        const [x2, y2] = project(a.to[0], a.to[1], a.to[2]);
+        ctx.strokeStyle = cssVar("--gridline");
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        const [lx, ly] = project(a.to[0] * 1.08, a.to[1] * 1.08, a.to[2] * 1.08);
+        ctx.fillStyle = cssVar("--text-muted");
+        ctx.fillText(a.label, lx, ly);
+      }
+
+      // ground-plane square at y=0 for depth reference
+      ctx.strokeStyle = cssVar("--gridline");
+      ctx.beginPath();
+      const corners = [[-ext, 0, -ext], [ext, 0, -ext], [ext, 0, ext], [-ext, 0, ext]];
+      corners.forEach((c, i) => {
+        const [px, py] = project(c[0], c[1], c[2]);
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      });
+      ctx.closePath();
+      ctx.stroke();
+
+      // individual walks up to the playback position, depth-faded
+      const drawn = Math.min(walks.length, MAX_DRAWN_WALKS);
+      const alpha = Math.min(0.6, Math.max(0.07, 1.8 / Math.sqrt(drawn)));
+      const stride = Math.max(1, Math.floor(params.steps / 3000));
+      ctx.lineWidth = 1;
+      ctx.lineJoin = "round";
+      ctx.globalAlpha = alpha;
+      for (let s = 0; s < drawn; s++) {
+        const { xs, ys, zs } = walks[s];
+        ctx.strokeStyle = walkColor(s);
+        ctx.beginPath();
+        let [px, py] = project(xs[0], ys[0], zs[0]);
+        ctx.moveTo(px, py);
+        for (let i = stride; i <= upTo; i += stride) {
+          [px, py] = project(xs[i], ys[i], zs[i]);
+          ctx.lineTo(px, py);
+        }
+        if ((upTo % stride) !== 0) {
+          [px, py] = project(xs[upTo], ys[upTo], zs[upTo]);
+          ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      // walker head dots, size hinting depth
+      ctx.globalAlpha = Math.min(1, alpha * 4);
+      for (let s = 0; s < drawn; s++) {
+        ctx.fillStyle = walkColor(s);
+        const [px, py, depth] = project(walks[s].xs[upTo], walks[s].ys[upTo], walks[s].zs[upTo]);
+        const r = Math.max(1.5, 3 * (persp / (persp + depth)));
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // ensemble mean trail
+      ctx.strokeStyle = cssVar("--series-mean");
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      let [mx, my] = project(stats.meanX[0], stats.meanY[0], stats.meanZ[0]);
+      ctx.moveTo(mx, my);
+      for (let i = stride; i <= upTo; i += stride) {
+        [mx, my] = project(stats.meanX[i], stats.meanY[i], stats.meanZ[i]);
+        ctx.lineTo(mx, my);
+      }
+      if ((upTo % stride) !== 0) {
+        [mx, my] = project(stats.meanX[upTo], stats.meanY[upTo], stats.meanZ[upTo]);
+        ctx.lineTo(mx, my);
+      }
+      ctx.stroke();
+
+      // end marker on the mean, with surface ring
+      const [ex, ey] = project(stats.meanX[upTo], stats.meanY[upTo], stats.meanZ[upTo]);
+      ctx.beginPath();
+      ctx.arc(ex, ey, 6, 0, Math.PI * 2);
+      ctx.fillStyle = surface;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(ex, ey, 4, 0, Math.PI * 2);
+      ctx.fillStyle = cssVar("--series-mean");
+      ctx.fill();
+
+      // origin marker
+      const [ox, oy] = project(0, 0, 0);
+      ctx.strokeStyle = cssVar("--text-secondary");
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(ox - 5, oy); ctx.lineTo(ox + 5, oy);
+      ctx.moveTo(ox, oy - 5); ctx.lineTo(ox, oy + 5);
+      ctx.stroke();
+
+      // scale note (replaces tick labels, which don't fit a rotating frame)
+      ctx.fillStyle = cssVar("--text-muted");
+      ctx.textAlign = "left";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(`axes span ±${fmt(ext, 0)} units`, 12, H - 10);
+    }
+
+    // drag to rotate, scroll to zoom
+    let dragging = false, lastX = 0, lastY = 0;
+    canvas.addEventListener("pointerdown", e => {
+      dragging = true;
+      lastX = e.clientX; lastY = e.clientY;
+      canvas.classList.add("dragging");
+      canvas.setPointerCapture(e.pointerId);
+    });
+    canvas.addEventListener("pointermove", e => {
+      if (!dragging) return;
+      cam.yaw += (e.clientX - lastX) * 0.008;
+      cam.pitch = Math.max(-1.4, Math.min(1.4, cam.pitch + (e.clientY - lastY) * 0.008));
+      lastX = e.clientX; lastY = e.clientY;
+      render();
+    });
+    canvas.addEventListener("pointerup", e => {
+      dragging = false;
+      canvas.classList.remove("dragging");
+      canvas.releasePointerCapture(e.pointerId);
+    });
+    canvas.addEventListener("wheel", e => {
+      e.preventDefault();
+      cam.zoom = Math.max(0.3, Math.min(6, cam.zoom * (e.deltaY < 0 ? 1.1 : 0.9)));
+      render();
+    }, { passive: false });
+
+    function readParams() {
+      const ids = ["d3-pUp", "d3-pDown", "d3-pLeft", "d3-pRight", "d3-pFwd", "d3-pBack"];
+      const pcts = ids.map(id => Number($(id).value));
+      const steps = Math.floor(Number($("d3-nSteps").value));
+      const sims = Math.floor(Number($("d3-nSims").value));
+      const err = $("d3-errMsg");
+
+      if (pcts.some(p => !Number.isFinite(p) || p < 0)) {
+        err.textContent = "Probabilities must be non-negative numbers.";
+        return null;
+      }
+      const total = pcts.reduce((a, b) => a + b, 0);
+      if (total > 100.0001) {
+        err.textContent = "The six direction probabilities can’t exceed 100% combined.";
+        return null;
+      }
+      if (!Number.isFinite(steps) || steps < 1 || steps > 20000) {
+        err.textContent = "Steps must be between 1 and 20,000.";
+        return null;
+      }
+      if (!Number.isFinite(sims) || sims < 1 || sims > 5000) {
+        err.textContent = "Simulations must be between 1 and 5,000.";
+        return null;
+      }
+      err.textContent = "";
+      $("d3-pStay").textContent = fmt(100 - total);
+      const [pUp, pDown, pLeft, pRight, pFwd, pBack] = pcts.map(p => p / 100);
+      return { pUp, pDown, pLeft, pRight, pFwd, pBack, steps, sims };
+    }
+
+    function run() {
+      const p = readParams();
+      if (!p) return;
+      params = p;
+      walks = simulate(p, p.steps, p.sims);
+      stats = computeStats(walks, p.steps);
+
+      // theory: E[R²] = Σ over axes of n·var + (n·drift)²
+      const n = p.steps;
+      let r2 = 0;
+      for (const [a, b] of [[p.pRight, p.pLeft], [p.pUp, p.pDown], [p.pFwd, p.pBack]]) {
+        const mu = a - b;
+        r2 += n * ((a + b) - mu * mu) + (n * mu) ** 2;
+      }
+      const rmsTheory = Math.sqrt(r2);
+
+      let far = 0;
+      for (let i = 0; i <= p.steps; i++) far = Math.max(far, stats.maxDist[i]);
+
+      $("d3-statMean").textContent = fmt(stats.meanDist[p.steps]);
+      $("d3-statRms").textContent = fmt(stats.rmsDist[p.steps]);
+      $("d3-statTheory").textContent = fmt(rmsTheory);
+      $("d3-statMax").textContent = fmt(far, 1);
+
+      pb.reset(p.steps);
+      render();
+      fillTable($("d3-dataTable"), p.steps, i =>
+        [i, fmt(stats.meanX[i]), fmt(stats.meanY[i]), fmt(stats.meanZ[i]), fmt(stats.meanDist[i]), fmt(stats.maxDist[i], 1)]);
+    }
+
+    debounceRun($("sec3d"), $("d3-rerun"), run);
+    return { run, render, hasRun: () => !!stats };
+  })();
+
   /* ================= tabs ================= */
 
   const sections = { tab1d: { tab: $("tab1d"), sec: $("sec1d"), mod: oneD },
-                     tab2d: { tab: $("tab2d"), sec: $("sec2d"), mod: twoD } };
+                     tab2d: { tab: $("tab2d"), sec: $("sec2d"), mod: twoD },
+                     tab3d: { tab: $("tab3d"), sec: $("sec3d"), mod: threeD } };
 
   function activate(key) {
     for (const [k, v] of Object.entries(sections)) {
@@ -1180,6 +1606,7 @@
 
   $("tab1d").addEventListener("click", () => activate("tab1d"));
   $("tab2d").addEventListener("click", () => activate("tab2d"));
+  $("tab3d").addEventListener("click", () => activate("tab3d"));
 
   window.addEventListener("resize", () => {
     for (const v of Object.values(sections)) if (!v.sec.hidden && v.mod.hasRun()) v.mod.render();
